@@ -1,0 +1,5 @@
+/build/**
+# Please don't commit your build folder!
+
+#lets allow test cases to be saved
+!/build/*.game

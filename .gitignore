@@ -1,0 +1,43 @@
+/build/**
+#lets allow test cases to be saved
+!/build/*.game
+!/build/bin/*.game
+
+/graphviz/**
+.vscode/
+# Please don't commit your build folder!
+
+#------------------- gitignore files provided by cpp-tree-sitter --------------------------
+# Prerequisites
+*.d
+
+# Compiled Object files
+*.slo
+*.lo
+*.o
+*.obj
+
+# Precompiled Headers
+*.gch
+*.pch
+
+# Compiled Dynamic libraries
+*.so
+*.dylib
+*.dll
+
+# Fortran module files
+*.mod
+*.smod
+
+# Compiled Static libraries
+*.lai
+*.la
+*.a
+*.lib
+
+# Executables
+*.exe
+*.out
+*.app
+#------------------- end of: gitignore files provided by cpp-tree-sitter --------------------------

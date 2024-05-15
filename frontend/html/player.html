@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Player Waiting Lobby</title>
+
+  <script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
+  <script>
+    $(document).ready(function() {
+
+      var ws = null;
+      var uriPieces = window.location.href.split('/');
+      var wsLocation = 'ws://' + uriPieces[2];
+      $('#uri:text').val(wsLocation);
+
+      const gameCode = uriPieces[uriPieces.length - 1];
+      const playerName = uriPieces[uriPieces.length - 2];
+
+      $('#gameCode').append(gameCode);
+      $('#gameCode').append(' is valid');
+
+
+      $('#playerName').append(playerName);
+      
+      ws = new WebSocket(uri.value);
+      ws.onopen = function(ev) {
+        const initJoinMesssage = {
+          action: "JOIN_GAME",
+          gameCode: gameCode,
+          playerName: playerName
+        }
+        sendFormattedMessage(JSON.stringify(initJoinMesssage));
+      };
+      $(document).on("click", "#disconnect", function () {
+        const disconnectedMessage = {
+          action: "disconnected",
+          gameCode: gameCode,
+          playerName: playerName
+        }//TODO: send the player ID, which can be gotten from the server's return message when first sent to lobby.
+          sendFormattedMessage(JSON.stringify(disconnectedMessage))
+            .then(() => {
+              console.log("disconnect function executed");
+              ws.close();
+              window.location.href = "/"
+          });
+      });
+
+      ws.onmessage = function(ev) {
+        processMessage(ev.data);
+      };
+      ws.onerror = function(ev) {
+        console.log(ev);
+      };
+
+      function sendFormattedMessage(text){
+        ws.send(text);
+        return Promise.resolve();
+      }
+
+      $('#send').click(function () {
+        const playerMesssage = {
+          action: "PLAYER_ACTION",
+          gameCode: gameCode,
+          playerName: playerName,
+          playerMessage: sendMessage.value,
+        }
+        sendFormattedMessage(JSON.stringify(playerMesssage));
+        sendMessage.value = "";
+      });
+
+      $('#sendMessage').keyup(function(e) {
+        e.preventDefault();
+        if (e.keyCode === 13) {
+          $('#send').click();
+        }
+      });
+
+      function processMessage(text){
+        // text won't be able to be parsed into JSON format so just exit early
+        if (!text.includes("serverMessage")) {
+          return;
+        }
+
+        const receivedMessage = JSON.parse(text);
+
+        //console.log("Input message in JSON", receivedMessage);
+
+        // if the message is not for this game then ignore the message
+        if (receivedMessage.gameCode != gameCode) {
+          return
+        }
+
+        if(receivedMessage.serverMessage.includes("CANCEL_GAME")){
+          window.location.href = "/";
+        }
+
+        //Game started message
+        if(receivedMessage.serverMessage.includes("GAME IS NOW STARTING")){
+          $('#textDisplay').append("Game session has now started");
+        }
+      }
+
+    });
+  </script>
+</head>
+
+<body>
+<style>
+  .playerScreen{
+    display: flex;
+    flex-direction: column;
+    flex-wrap: nowrap;
+    align-content: flex-end;
+    justify-content: space-evenly;
+    align-items: center;
+    width:100%
+  }
+  .chat{
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  .gameButtons{
+    display: flex;
+    flex-direction: row;
+  }
+  #sendMessage {
+    width: 100%;
+    box-sizing: border-box; /* Ensures that padding and border are included in the total width */
+    margin-bottom: 10px; /* Adjust as needed for spacing */
+  }
+  body {
+    font-family: Arial, sans-serif;
+    background-color: #f0f0f0;
+    color: #333;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+  }
+
+  h1, h2 {
+    color: #3498db; /* Blue as the main color */
+  }
+
+  input, button {
+    margin-bottom: 10px;
+    padding: 10px;
+    border: 1px solid #3498db;
+    border-radius: 5px;
+    font-size: 16px;
+  }
+
+  input[type="text"] {
+    width: 100%;
+  }
+
+  button {
+    color: white;
+    cursor: pointer;
+  }
+  #disconnect {
+    background-color: #db3447; 
+    width: 43%;
+  }
+  #send {
+    background-color: #3498db;
+    width: 43%;
+  }
+
+  button:hover {
+    background-color: #f39c12;
+    border-color: #f39c12;
+  }
+</style>
+<div class="playerScreen">
+  <h1>Player Waiting Lobby</h1>
+  <h2 id="playerName">PlayerName - </h2>
+  <h2 id="gameCode">Code entered - </h2>
+
+  <div id="textDisplay"></div><br>
+
+  Chat Server: <input id="uri" size="40" disabled>
+
+  <div class="chat">
+    Enter Message:<br />
+    <input id="sendMessage" size="50" value="" placeholder="Enter game message here - (Work in Progress)" disabled/>
+    <div class="chatButtons">
+      <button id="send" style="display: inline-block; margin-right: 10px;">Send</button>
+      <button id="disconnect" style="display: inline-block;">Exit</button>
+    </div>    
+  </div>
+</div>
+
+</body>
+</html>

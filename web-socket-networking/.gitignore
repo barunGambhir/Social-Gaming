@@ -1,0 +1,3 @@
+**/build/**
+!/build/bin/*.game
+# Please don't commit your build folder!

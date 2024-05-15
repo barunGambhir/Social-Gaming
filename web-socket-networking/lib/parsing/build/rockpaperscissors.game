@@ -1,0 +1,79 @@
+// These are examples of core properties of a game that might be
+// configured when setting up an instance or lobby for a game.
+configuration {
+  name: "Rock, Paper, Scissors"
+  player range: (2, 14)
+  audience: true
+  setup: {
+    rounds {
+      kind: integer
+      prompt: "The number of rounds to play"
+      range: (1, 20)
+    }
+    num_rounds {
+      kind: integer
+      prompt: "Number of rounds to play"
+      range: (1, 10)
+      default: 5
+    }
+    mode {
+      kind: enum,
+      prompt: "Game Style"
+      choices: {
+        'fast':     'A quick round with friends'
+        'standard': 'Standard play'
+        'long':     'A marathon battle against former friends'
+      }
+    }
+  }
+}
+
+// Global constants can be expressed in a JSON-like format.
+constants {
+  weapons: [
+    { name: "Rock",     beats: "Scissors" },
+    { name: "Paper",    beats: "Rock"     },
+    { name: "Scissors", beats: "Paper"    },
+  ],
+   brand_name: "Starbucks" ,
+   supported_consoles: ["Xbox360","Switch"],
+   favourite_number: 3,
+   class: { name: "cmpt", number: "373"}
+}
+
+// The same is true of the initial values for global variables.
+variables {
+  winners: [],
+  tiers: []
+}
+
+// The per player state exists independently for each player, so
+// initializing `wins` below to 0 creates a counter for each player and
+// initializes it to 0.
+per-player {
+  wins: 0
+}
+
+// If there were some form of audience participation, the state for each
+// audience member could also be tracked separately. What sorts of
+// considerations might that imply for implementing it?
+per-audience {}
+
+// Finally, the rules of the game execute as previously described after the
+// game has been started.
+rules {
+    message all "GAME START";
+    message all "This text is coming to your straight from the .game file!";
+    message all "Welcome to round {round}.";
+    message all "The available weapons are:";
+
+    for round in configuration.rounds.upfrom(1) {
+    }
+
+    discard winners.size() from winners;
+
+    message all "Round {round}. Choose your weapon!";
+
+    // Report the final scores!
+    scores ["wins"];
+}

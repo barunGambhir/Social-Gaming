@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Web Chat Game</title>
+
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f0f0f0;
+      color: #333;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+    }
+  
+    h1, h2 {
+      color: #3498db; /* Blue as the main color */
+    }
+  
+    input, button {
+      margin-bottom: 10px;
+      padding: 10px;
+      border: 1px solid #3498db;
+      border-radius: 5px;
+      font-size: 16px;
+    }
+  
+    input[type="text"] {
+      width: 100%;
+    }
+  
+    button {
+      color: white;
+      cursor: pointer;
+    }
+  
+    #endGame {
+      background-color: #db3447; 
+      width: 30%;
+    }
+  
+    #startButton {
+      background-color: #3498db;
+      width: 60%;
+    }
+    .gameButtons{
+      display: flex;
+      flex-direction: row;
+      justify-content: space-between;
+      width: 80vw;
+    }
+  
+    button:hover {
+      background-color: #f39c12;
+      border-color: #f39c12; 
+      border-width: medium;
+    }
+  
+    #waitingPlayers {
+      width: 80vw;
+      max-height: 40vh;
+      border: solid 1px #cccccc;
+      overflow-y: auto; /*scrollable*/
+      padding: 10px;
+      background: white;
+    }
+  </style>
+  
+
+  <script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
+  <script>
+    $(document).ready(function() {
+      function appendText(text) {
+        $('#waitingPlayers').append(text);
+        $('#waitingPlayers').scrollTop($('#waitingPlayers')[0].scrollHeight);
+      }
+
+      function sendFormattedMessage(text){
+        ws.send(text);
+        return Promise.resolve();
+      }
+
+      var ws = null;
+      var uriPieces = window.location.href.split('/');
+      var wsLocation = 'ws://' + uriPieces[2];
+      $('#uri:text').val(wsLocation);
+
+
+      const gameCode = uriPieces[uriPieces.length - 1];
+
+      $('#gameCode').append(gameCode);
+      ws = new WebSocket(uri.value);
+      //ToDo: change to onload() we start a connection to the server
+      //ToDo: if we fail to connect, e.g. server isnt running, display an error page with a retry button.
+      ws.onopen = function(ev) {
+        appendText("Connected to " + uri.value + "\n");
+        const initJoinMesssage = {
+          action: "CREATE_GAME",
+          gameCode: gameCode,
+        }
+        sendFormattedMessage(JSON.stringify(initJoinMesssage));
+      };
+      ws.onclose = function(ev) {
+        appendText("Disconnected!\n");
+      };
+      ws.onmessage = function(ev) {
+        //ToDo: process incoming message, e.g. if it starts with welcomeLobby, go to the lobby
+        processMessage(ev.data);
+      };
+      ws.onerror = function(ev) {
+        appendText("[error]\n");
+        console.log(ev);
+      };
+      const startButton = document.getElementById('startButton');
+      startButton.addEventListener('click', function (event) {
+          console.log("yes startButton.addEventListener('click', function (event) {");
+
+          //send the attempted join message to the server 
+          const startMessage = {
+            action: "START_GAME",
+            gameCode: gameCode
+          };
+          sendFormattedMessage(JSON.stringify(startMessage));
+      });
+
+      const endButton = document.getElementById('endGame');
+      endButton.addEventListener('click', function (event) {
+          console.log("Ending the game session");
+
+          //send the ending game session message
+          const endMessage = {
+            action: "CANCEL_GAME",
+            gameCode: gameCode
+          };
+          sendFormattedMessage(JSON.stringify(endMessage));
+      });
+
+      function processMessage(text){
+        // text won't be able to be parsed into JSON format so just exit early
+        if (!text.includes("serverMessage")) {
+          return;
+        }
+
+        const receivedMessage = JSON.parse(text);
+
+        console.log("Input message in JSON", receivedMessage);
+
+        // if the message is not for this game then ignore the message
+        if (receivedMessage.gameCode != gameCode) {
+          return
+        }
+
+        if(receivedMessage.serverMessage.includes("CANCEL_GAME")){
+          window.location.href = "/";
+        }
+        appendText(receivedMessage.serverMessage);  
+
+        if(receivedMessage.serverMessage.includes("GAME IS NOW STARTING")){
+          const startButton = document.getElementById('startButton');
+          startButton.style.display = 'none';
+        }  
+      }
+
+    });
+  </script>
+</head>
+
+<body>
+
+  <h1>Web Chat Game Session</h1>
+  <h2 id="gameCode">Code - </h2>
+
+  Chat Server: <input id="uri" size="40" disabled>
+  <pre id="waitingPlayers"></pre>
+
+  <div class="gameButtons">
+    <button id="startButton">Everyone's Here! Let's Start</button>
+    <button id="endGame">Exit Game</button>
+  </div>
+</body>
+</html>
